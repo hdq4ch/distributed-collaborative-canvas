@@ -1,5 +1,7 @@
 # 🎨 Real-Time Collaborative Whiteboard
 
+[![CI Pipeline](https://github.com/hdq4ch/distributed-collaborative-canvas/actions/workflows/ci.yml/badge.svg)](https://github.com/hdq4ch/distributed-collaborative-canvas/actions/workflows/ci.yml)
+
 A high-performance, full-stack collaborative whiteboard platform built with modern TypeScript, WebSockets, Redis, and Next.js. Supports multi-user drawing, shapes, text, live cursor telemetries, and distributed cross-server synchronization.
 
 ---
