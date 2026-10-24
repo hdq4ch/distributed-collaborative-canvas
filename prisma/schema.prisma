@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String   // bcrypt hashed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  ownedBoards  Board[]       @relation("BoardOwner")
+  memberships  BoardMember[]
+  
+  @@map("users")
+}
+
+model Board {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  ownerId     String
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Yjs document state — stored as binary bytes
+  yjsState    Bytes?
+
+  // Relations
+  owner       User          @relation("BoardOwner", fields: [ownerId], references: [id])
+  members     BoardMember[]
+
+  @@map("boards")
+}
+
+model BoardMember {
+  id      String          @id @default(cuid())
+  boardId String
+  userId  String
+  role    BoardMemberRole @default(EDITOR)
+  joinedAt DateTime       @default(now())
+
+  board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, userId])
+  @@map("board_members")
+}
+
+enum BoardMemberRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
