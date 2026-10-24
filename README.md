@@ -24,6 +24,7 @@ A high-performance, full-stack collaborative whiteboard platform built with mode
 ```text
 ├── apps/
 │   ├── server/                  # WebSocket & REST API backend (Node.js/Express)
+│   │   ├── prisma/              # Prisma schema & migrations
 │   │   └── src/
 │   │       ├── auth/            # Auth routes (register, login, me)
 │   │       ├── boards/          # Board management CRUD
@@ -39,8 +40,6 @@ A high-performance, full-stack collaborative whiteboard platform built with mode
 │       ├── components/          # Canvas, Toolbar, Whiteboard, Participants
 │       └── hooks/               # useWebSocket custom hook
 │
-├── prisma/
-│   └── schema.prisma            # Database models (User, Board, BoardMember)
 ├── tests/
 │   └── load/                    # k6 concurrency and stress tests
 ├── docker-compose.yml           # Local PostgreSQL & Redis infrastructure

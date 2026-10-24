@@ -15,7 +15,7 @@ export default function HomePage() {
 
   // Generate room ID client-side after mount (Math.random() can't run during SSR)
   useEffect(() => {
-    setNewRoomId(Math.random().toString(36).slice(2, 10));
+    setNewRoomId(generateRoomId());
   }, []);
 
   const handleJoin = (e: React.FormEvent) => {
