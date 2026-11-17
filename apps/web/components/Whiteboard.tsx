@@ -52,7 +52,7 @@ export default function Whiteboard({ roomId, userName = 'Guest' }: WhiteboardPro
 
       case 'joined': {
         const list = msg.participants as Array<{ id: string; name: string }>;
-        setParticipants(list);
+        setParticipants(Array.from(new Map(list.map((participant) => [participant.id, participant])).values()));
         break;
       }
 
@@ -66,9 +66,10 @@ export default function Whiteboard({ roomId, userName = 'Guest' }: WhiteboardPro
       }
 
       case 'user-joined': {
+        const participant = { id: msg.clientId as string, name: msg.name as string };
         setParticipants((prev) => [
-          ...prev,
-          { id: msg.clientId as string, name: msg.name as string },
+          ...prev.filter((existing) => existing.id !== participant.id),
+          participant,
         ]);
         break;
       }
