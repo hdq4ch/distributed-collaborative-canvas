@@ -62,19 +62,12 @@ async function loadBoardShapes(roomId: string): Promise<DrawShape[]> {
 /** Helper to persist shapes for a board to the DB */
 async function saveBoardShapes(roomId: string, shapes: DrawShape[]): Promise<void> {
   try {
-    await prisma.board.upsert({
+    await prisma.board.updateMany({
       where: { id: roomId },
-      update: { yjsState: Buffer.from(JSON.stringify(shapes), 'utf-8') },
-      create: {
-        id: roomId,
-        name: `Board ${roomId}`,
-        ownerId: 'anonymous', // replaced when auth is integrated
-        yjsState: Buffer.from(JSON.stringify(shapes), 'utf-8'),
-      },
+      data: { yjsState: Buffer.from(JSON.stringify(shapes), 'utf-8') },
     });
   } catch (err) {
-    // Silently ignore — persistence is best-effort
-    // (e.g. anonymous boards with no owner FK won't persist)
+    console.error(`[DB] Failed to save shapes for room ${roomId}:`, err);
   }
 }
 

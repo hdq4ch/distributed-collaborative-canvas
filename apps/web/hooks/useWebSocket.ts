@@ -32,54 +32,69 @@ export function useWebSocket({ url, roomId, userName, onMessage }: UseWebSocketO
   const [clientId, setClientId] = useState<string | undefined>();
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const onMessageRef = useRef(onMessage);
-  onMessageRef.current = onMessage; // always use latest version without re-subscribing
-
-  const connect = useCallback(() => {
-    const ws = new WebSocket(url);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      console.log('[WS] Connected');
-      setConnected(true);
-
-      // Join the room immediately after connecting
-      ws.send(JSON.stringify({ type: 'join', roomId, userName }));
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const msg: WsMessage = JSON.parse(event.data);
-
-        // If we just joined, capture our client ID
-        if (msg.type === 'joined') {
-          setClientId(msg.clientId as string);
-        }
-
-        onMessageRef.current(msg);
-      } catch (err) {
-        console.error('[WS] Failed to parse message', err);
-      }
-    };
-
-    ws.onclose = () => {
-      console.log('[WS] Disconnected. Reconnecting in 3s...');
-      setConnected(false);
-      // Auto-reconnect after 3 seconds
-      reconnectTimer.current = setTimeout(connect, 3000);
-    };
-
-    ws.onerror = (err) => {
-      console.error('[WS] Error:', err);
-    };
-  }, [url, roomId, userName]);
 
   useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
+
+  useEffect(() => {
+    let disposed = false;
+    const connect = () => {
+      if (disposed) return;
+
+      const ws = new WebSocket(url);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        if (disposed || wsRef.current !== ws) return;
+        console.log('[WS] Connected');
+        setConnected(true);
+
+        // Join the room immediately after connecting
+        ws.send(JSON.stringify({ type: 'join', roomId, userName }));
+      };
+
+      ws.onmessage = (event) => {
+        if (disposed || wsRef.current !== ws) return;
+        try {
+          const msg: WsMessage = JSON.parse(event.data);
+
+          // If we just joined, capture our client ID
+          if (msg.type === 'joined') {
+            setClientId(msg.clientId as string);
+          }
+
+          onMessageRef.current(msg);
+        } catch (err) {
+          console.error('[WS] Failed to parse message', err);
+        }
+      };
+
+      ws.onclose = () => {
+        if (disposed || wsRef.current !== ws) return;
+        wsRef.current = null;
+        console.log('[WS] Disconnected. Reconnecting in 3s...');
+        setConnected(false);
+        // Auto-reconnect after 3 seconds
+        reconnectTimer.current = setTimeout(connect, 3000);
+      };
+
+      ws.onerror = () => {
+        // In browser standard WebSocket, ErrorEvent doesn't expose detailed properties.
+        // This happens when the server at `url` is unreachable or closed.
+        console.warn(`[WS] Connection failed to ${url}. Make sure the backend server is running on port 4000.`);
+      };
+    };
+
     connect();
     return () => {
+      disposed = true;
       clearTimeout(reconnectTimer.current);
-      wsRef.current?.close();
+      const ws = wsRef.current;
+      wsRef.current = null;
+      ws?.close();
     };
-  }, [connect]);
+  }, [url, roomId, userName]);
 
   const send = useCallback((message: WsMessage) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
